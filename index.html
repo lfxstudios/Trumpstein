@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Oval Office Secrets (Reveal Document)</title>
+  <style>
+    body {
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background-color: #222;
+    }
+    #game-wrapper {
+      position: relative;
+      width: 1000px;
+      height: 700px;
+      background-image: url('oval-office.png');
+      background-size: cover;
+      background-position: center;
+      box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    }
+    #trump {
+      position: absolute;
+      top: 40px;
+      left: 400px;
+      width: 300px;
+      pointer-events: none;
+      z-index: 2;
+    }
+    .phone-img {
+      position: absolute;
+      top: 375px;
+      left: 320px;
+      width: 60px;
+      height: auto;
+      transition: transform 0.4s ease;
+      z-index: 10;
+      cursor: pointer;
+    }
+    .phone-lifted {
+      transform: translateY(-30px) rotateX(20deg);
+    }
+    .secret-doc {
+      position: absolute;
+      width: 80px;
+      opacity: 0;
+      transition: opacity 0.4s ease;
+      z-index: 5;
+    }
+    .doc-visible {
+      opacity: 1;
+    }
+    #message {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(255,255,255,0.95);
+      padding: 10px 20px;
+      border-radius: 10px;
+      font-size: 18px;
+      z-index: 20;
+    }
+    #game-over-animation, #success-animation {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.8);
+      z-index: 30;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      color: white;
+      font-size: 24px;
+    }
+    #game-over-animation img,
+    #success-animation img {
+      width: 600px;
+      max-width: 100%;
+      border-radius: 10px;
+    }
+    #success-animation button,
+    #game-over-animation button {
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 18px;
+      border: none;
+      border-radius: 5px;
+      background-color: #4CAF50;
+      color: white;
+      cursor: pointer;
+    }
+    #armchair, #lamp, #table-lamp, #golfer-pic, #trump-pic, #flower-vase {
+      position: absolute;
+      cursor: pointer;
+      transition: transform 0.4s ease;
+      z-index: 6;
+    }
+    #armchair {
+      top: 340px;
+      left: -50px;
+      width: 400px;
+    }
+    #lamp {
+      top: 260px;
+      left: 800px;
+      width: 300px;
+    }
+    #table-lamp {
+      top: 290px;
+      left: 665px;
+      width: 100px;
+      z-index: 7;
+    }
+    #golfer-pic {
+      top: 140px;
+      left: 315px;
+      width: 100px;
+    }
+    #trump-pic {
+     top: 160px;
+      left: 680px;
+      width: 100px;
+    }
+    #flower-vase {
+      top: 300px;
+      left: 750px;
+      width: 200px;
+    }
+    .wrong-click {
+      transform: translateY(-15px);
+    }
+  </style>
+</head>
+<body>
+  <div id="game-wrapper">
+    <div id="message">Find the secret documents! 🗃️</div>
+
+    <img id="trump" src="trump.png" alt="Trump behind desk">
+    <img id="armchair" src="armchair.png" alt="Blue Armchair">
+    <img id="lamp" src="standing-lamp.png" alt="Standing Lamp">
+    <img id="table-lamp" src="table-lamp.png" alt="Table Lamp">
+    <img id="golfer-pic" src="golfer-pic.png" alt="Golfer Picture">
+    <img id="trump-pic" src="trump-pic.png" alt="Trump Picture">
+    <img id="flower-vase" src="flower-vase.png" alt="Vase of Flowers">
+    <img id="secret-doc" class="secret-doc" src="epstein-doc.png" alt="Secret Document">
+    <img id="cartoon-phone" class="phone-img" src="A_hand-drawn_2D_digital_illustration_depicts_a_vin.png" alt="Cartoon Phone">
+
+    <div id="game-over-animation">
+      <img src="game-over.gif" alt="Game Over Animation">
+      <p>Try again</p>
+      <button onclick="resetGame()">Play Again</button>
+    </div>
+
+    <div id="success-animation">
+      <img src="congrats.gif" alt="Success Animation">
+      <p>You found the pedo list!</p>
+      <button onclick="resetGame()">Play Again</button>
+    </div>
+  </div>
+
+  <script>
+    const message = document.getElementById("message");
+    const doc = document.getElementById("secret-doc");
+    const trump = document.getElementById("trump");
+    const gameOverAnim = document.getElementById("game-over-animation");
+    const successAnim = document.getElementById("success-animation");
+
+    const objects = [
+      { id: "cartoon-phone", top: 375, left: 320 },
+      { id: "armchair", top: 370, left: 70 },
+      { id: "lamp", top: 370, left: 820 },
+      { id: "table-lamp", top: 370, left: 670 },
+      { id: "golfer-pic", top: 240, left: 100 },
+      { id: "trump-pic", top: 240, left: 850 },
+      { id: "flower-vase", top: 570, left: 470 }
+    ];
+
+    const trumpStages = ["trump.png", "trump-angry1.png", "trump-angry2.png", "trump-angry3.png"];
+
+    let correctId = null;
+    let found = false;
+    let wrongClicks = 0;
+    let gameOver = false;
+
+    function setSecretLocation() {
+      const randIndex = Math.floor(Math.random() * objects.length);
+      const secretObj = objects[randIndex];
+      correctId = secretObj.id;
+      doc.style.top = `${secretObj.top}px`;
+      doc.style.left = `${secretObj.left}px`;
+    }
+
+    function resetGame() {
+      found = false;
+      gameOver = false;
+      wrongClicks = 0;
+      trump.src = trumpStages[0];
+      doc.classList.remove("doc-visible");
+      document.querySelectorAll(".phone-img, #armchair, #lamp, #table-lamp, #golfer-pic, #trump-pic, #flower-vase")
+        .forEach(el => el.classList.remove("phone-lifted", "wrong-click"));
+      message.textContent = "Try again! Find the secret documents! 🗃️";
+      gameOverAnim.style.display = "none";
+      successAnim.style.display = "none";
+      setSecretLocation();
+    }
+
+    function handleWrongClick(element) {
+      if (found || gameOver) return;
+      element.classList.add("wrong-click");
+      setTimeout(() => element.classList.remove("wrong-click"), 400);
+      wrongClicks++;
+      if (wrongClicks < trumpStages.length) {
+        trump.src = trumpStages[wrongClicks];
+        message.textContent = `Nope, not there! Trump is getting angrier... (${wrongClicks}/3)`;
+      }
+      if (wrongClicks === 3) {
+        trump.src = trumpStages[3];
+        const gif = gameOverAnim.querySelector("img");
+        gif.src = gif.src;
+        gameOverAnim.style.display = "flex";
+        message.textContent = "";
+        gameOver = true;
+      }
+    }
+
+    objects.forEach(obj => {
+      const el = document.getElementById(obj.id);
+      el.addEventListener("click", (e) => {
+        if (gameOver || found) return;
+        e.stopPropagation();
+        if (obj.id === correctId) {
+          el.classList.add("phone-lifted");
+          doc.classList.add("doc-visible");
+          message.textContent = "";
+          trump.src = "trump-happy.png";
+          const gif = successAnim.querySelector("img");
+          gif.src = gif.src;
+          successAnim.style.display = "flex";
+          found = true;
+        } else {
+          handleWrongClick(el);
+        }
+      });
+    });
+
+    setSecretLocation();
+  </script>
+</body>
+</html>
